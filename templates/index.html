@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movie Recommender</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <script>
+        let selectedMovies = [];
+
+        function searchMovies() {
+            const query = document.getElementById("search-input").value;
+            fetch("/search", {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: `query=${query}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                const searchResults = document.getElementById("search-results");
+                searchResults.innerHTML = ""; // Clear previous results
+                data.forEach(movie => {
+                    const movieElement = document.createElement("div");
+                    movieElement.className = "movie-item";
+                    movieElement.innerHTML = `
+                        <span>${movie.title} (${movie.genres})</span>
+                        <button onclick="addToList('${movie.title}')">Add</button>
+                    `;
+                    searchResults.appendChild(movieElement);
+                });
+            });
+        }
+
+        function addToList(movie) {
+            if (!selectedMovies.includes(movie)) {
+                selectedMovies.push(movie);
+                const list = document.getElementById("selected-movies");
+                const listItem = document.createElement("li");
+                listItem.textContent = movie;
+                list.appendChild(listItem);
+            }
+        }
+
+        function getRecommendations() {
+            fetch("/recommend", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ selected_movies: selectedMovies })
+            })
+            .then(response => response.json())
+            .then(data => {
+                const recommendations = document.getElementById("recommendations");
+                recommendations.innerHTML = ""; // Clear previous recommendations
+                data.forEach(movie => {
+                    const movieElement = document.createElement("li");
+                    movieElement.textContent = `${movie.title} (${movie.genres})`;
+                    recommendations.appendChild(movieElement);
+                });
+            });
+        }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Movie Recommender</h1>
+        </header>
+        <div class="main-content">
+            <div class="left-panel">
+                <h2>Search Movies</h2>
+                <input type="text" id="search-input" placeholder="Search for a movie...">
+                <button onclick="searchMovies()">Search</button>
+                <div id="search-results"></div>
+                <h3>Selected Movies</h3>
+                <ol id="selected-movies"></ol>
+                <button onclick="getRecommendations()">Submit</button>
+            </div>
+            <div class="right-panel">
+                <h2>Recommendations</h2>
+                <ol id="recommendations" class="recommendations-list"></ol>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
